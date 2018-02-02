@@ -2473,11 +2473,13 @@ static int audio_open(void *opaque, int64_t wanted_channel_layout, int wanted_nb
     static const int next_sample_rates[] = {0, 44100, 48000, 96000, 192000};
     int next_sample_rate_idx = FF_ARRAY_ELEMS(next_sample_rates) - 1;
     
-    env = SDL_getenv("SDL_AUDIO_CHANNELS");
-    if (env) {
-        wanted_nb_channels = atoi(env);
-        wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
-    }
+	env = SDL_getenv("SDL_AUDIO_CHANNELS");
+//    if (env) {
+//        wanted_nb_channels = atoi(env);
+//        wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
+//    }
+	wanted_nb_channels = 2;
+	wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
     if (!wanted_channel_layout || wanted_nb_channels != av_get_channel_layout_nb_channels(wanted_channel_layout)) {
         wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
         wanted_channel_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;

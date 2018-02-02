@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A89ED17202259BE000BCF84 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED16202259BE000BCF84 /* SDL2.framework */; };
 		0A89ED1F202259C6000BCF84 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED18202259C6000BCF84 /* libavutil.a */; };
 		0A89ED20202259C6000BCF84 /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED19202259C6000BCF84 /* libswscale.a */; };
 		0A89ED21202259C6000BCF84 /* libavdevice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED1A202259C6000BCF84 /* libavdevice.a */; };
@@ -26,10 +25,10 @@
 		0A89ED3720225C22000BCF84 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED3620225C22000BCF84 /* libz.tbd */; };
 		0A89ED3920226151000BCF84 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED3820226150000BCF84 /* CoreImage.framework */; };
 		0A89ED3B20226192000BCF84 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED3A20226192000BCF84 /* Security.framework */; };
-		0A89ED3D202261EF000BCF84 /* SDL2.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0A89ED16202259BE000BCF84 /* SDL2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1E5E4FD91C9EA351002E85FA /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E4FD71C9EA351002E85FA /* cmdutils.c */; };
 		1E5E4FDA1C9EA351002E85FA /* ffplay.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E4FD81C9EA351002E85FA /* ffplay.c */; };
 		1E5E4FDC1C9EA495002E85FA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E5E4FDB1C9EA495002E85FA /* Cocoa.framework */; };
+		58C47C2920240155005145AE /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 58C47C2820240155005145AE /* libSDL2-2.0.0.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -39,7 +38,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				0A89ED3D202261EF000BCF84 /* SDL2.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,7 +53,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0A89ED16202259BE000BCF84 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = Frameworks/SDL2.framework; sourceTree = "<group>"; };
 		0A89ED18202259C6000BCF84 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = lib/libavutil.a; sourceTree = "<group>"; };
 		0A89ED19202259C6000BCF84 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = lib/libswscale.a; sourceTree = "<group>"; };
 		0A89ED1A202259C6000BCF84 /* libavdevice.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavdevice.a; path = lib/libavdevice.a; sourceTree = "<group>"; };
@@ -78,6 +75,7 @@
 		1E5E4FD81C9EA351002E85FA /* ffplay.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffplay.c; sourceTree = SOURCE_ROOT; };
 		1E5E4FDB1C9EA495002E85FA /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		1EF88A631C9EA30A0036424C /* ffplay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ffplay; sourceTree = BUILT_PRODUCTS_DIR; };
+		58C47C2820240155005145AE /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libSDL2-2.0.0.dylib"; path = "../../../../../usr/local/Cellar/sdl2/2.0.7/lib/libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				58C47C2920240155005145AE /* libSDL2-2.0.0.dylib in Frameworks */,
 				0A89ED3B20226192000BCF84 /* Security.framework in Frameworks */,
 				0A89ED3920226151000BCF84 /* CoreImage.framework in Frameworks */,
 				0A89ED3720225C22000BCF84 /* libz.tbd in Frameworks */,
@@ -97,7 +96,6 @@
 				0A89ED2920225BD0000BCF84 /* CoreVideo.framework in Frameworks */,
 				0A89ED2720225BC7000BCF84 /* OpenGL.framework in Frameworks */,
 				1E5E4FDC1C9EA495002E85FA /* Cocoa.framework in Frameworks */,
-				0A89ED17202259BE000BCF84 /* SDL2.framework in Frameworks */,
 				0A89ED1F202259C6000BCF84 /* libavutil.a in Frameworks */,
 				0A89ED20202259C6000BCF84 /* libswscale.a in Frameworks */,
 				0A89ED21202259C6000BCF84 /* libavdevice.a in Frameworks */,
@@ -114,6 +112,7 @@
 		1E5E4FF11C9EA58A002E85FA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				58C47C2820240155005145AE /* libSDL2-2.0.0.dylib */,
 				0A89ED3A20226192000BCF84 /* Security.framework */,
 				0A89ED3820226150000BCF84 /* CoreImage.framework */,
 				0A89ED3620225C22000BCF84 /* libz.tbd */,
@@ -132,7 +131,6 @@
 				0A89ED18202259C6000BCF84 /* libavutil.a */,
 				0A89ED1E202259C6000BCF84 /* libswresample.a */,
 				0A89ED19202259C6000BCF84 /* libswscale.a */,
-				0A89ED16202259BE000BCF84 /* SDL2.framework */,
 				1E5E4FDB1C9EA495002E85FA /* Cocoa.framework */,
 			);
 			name = Frameworks;
@@ -265,16 +263,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(LOCAL)/include",
-					"$(SRCROOT)/include",
-					"$(LOCAL)/include/SDL2",
-					/usr/local/Cellar/ffmpeg/3.4.1/include,
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/lib",
-					"$(LOCAL)/lib",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -312,16 +300,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(LOCAL)/include",
-					"$(SRCROOT)/include",
-					"$(LOCAL)/include/SDL2",
-					/usr/local/Cellar/ffmpeg/3.4.1/include,
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/lib",
-					"$(LOCAL)/lib",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
@@ -333,7 +311,6 @@
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)",
 					"\"$(SRCROOT)/Frameworks\"",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -341,17 +318,11 @@
 					"_GNU_SOURCE=1",
 					_THREAD_SAFE,
 				);
-				HEADER_SEARCH_PATHS = (
-					"$(LOCAL)/include",
-					"$(FFMPEG_PATH)/include",
-					"$(LOCAL)/include/SDL2",
-					"\"$(SRCROOT)/include\"",
-				);
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/ffmpeg/3.4.1/lib,
 					/usr/local/Cellar/sdl2/2.0.7/lib,
-					"$(PROJECT_DIR)/lib",
 					"\"$(SRCROOT)/lib\"",
 				);
 				OTHER_LDFLAGS = (
@@ -373,7 +344,6 @@
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)",
 					"\"$(SRCROOT)/Frameworks\"",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -381,17 +351,11 @@
 					"_GNU_SOURCE=1",
 					_THREAD_SAFE,
 				);
-				HEADER_SEARCH_PATHS = (
-					"$(LOCAL)/include",
-					"$(FFMPEG_PATH)/include",
-					"$(LOCAL)/include/SDL2",
-					"\"$(SRCROOT)/include\"",
-				);
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/include\"";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/ffmpeg/3.4.1/lib,
 					/usr/local/Cellar/sdl2/2.0.7/lib,
-					"$(PROJECT_DIR)/lib",
 					"\"$(SRCROOT)/lib\"",
 				);
 				OTHER_LDFLAGS = (
