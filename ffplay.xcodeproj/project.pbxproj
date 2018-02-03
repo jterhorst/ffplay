@@ -26,7 +26,7 @@
 		0A89ED3920226151000BCF84 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED3820226150000BCF84 /* CoreImage.framework */; };
 		0A89ED3B20226192000BCF84 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED3A20226192000BCF84 /* Security.framework */; };
 		1E5E4FD91C9EA351002E85FA /* cmdutils.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E4FD71C9EA351002E85FA /* cmdutils.c */; };
-		1E5E4FDA1C9EA351002E85FA /* ffplay.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E4FD81C9EA351002E85FA /* ffplay.c */; };
+		1E5E4FDA1C9EA351002E85FA /* ffplay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E4FD81C9EA351002E85FA /* ffplay.cpp */; };
 		1E5E4FDC1C9EA495002E85FA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E5E4FDB1C9EA495002E85FA /* Cocoa.framework */; };
 		58C47C2920240155005145AE /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 58C47C2820240155005145AE /* libSDL2-2.0.0.dylib */; };
 /* End PBXBuildFile section */
@@ -72,7 +72,7 @@
 		0A89ED3820226150000BCF84 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		0A89ED3A20226192000BCF84 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		1E5E4FD71C9EA351002E85FA /* cmdutils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cmdutils.c; sourceTree = SOURCE_ROOT; };
-		1E5E4FD81C9EA351002E85FA /* ffplay.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffplay.c; sourceTree = SOURCE_ROOT; };
+		1E5E4FD81C9EA351002E85FA /* ffplay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ffplay.cpp; sourceTree = SOURCE_ROOT; };
 		1E5E4FDB1C9EA495002E85FA /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		1EF88A631C9EA30A0036424C /* ffplay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ffplay; sourceTree = BUILT_PRODUCTS_DIR; };
 		58C47C2820240155005145AE /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libSDL2-2.0.0.dylib"; path = "../../../../../usr/local/Cellar/sdl2/2.0.7/lib/libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
@@ -157,7 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				1E5E4FD71C9EA351002E85FA /* cmdutils.c */,
-				1E5E4FD81C9EA351002E85FA /* ffplay.c */,
+				1E5E4FD81C9EA351002E85FA /* ffplay.cpp */,
 			);
 			path = ffplay;
 			sourceTree = "<group>";
@@ -220,7 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E5E4FD91C9EA351002E85FA /* cmdutils.c in Sources */,
-				1E5E4FDA1C9EA351002E85FA /* ffplay.c in Sources */,
+				1E5E4FDA1C9EA351002E85FA /* ffplay.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
