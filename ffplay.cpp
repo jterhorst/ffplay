@@ -340,7 +340,6 @@ static const char *video_codec_name;
 double rdftspeed = 0.02;
 #if CONFIG_AVFILTER
 static const char **vfilters_list = NULL;
-static int nb_vfilters = 0;
 static char *afilters = NULL;
 #endif
 static int autorotate = 1;
@@ -384,15 +383,6 @@ static const struct TextureFormatEntry {
     { AV_PIX_FMT_UYVY422,        SDL_PIXELFORMAT_UYVY },
     { AV_PIX_FMT_NONE,           SDL_PIXELFORMAT_UNKNOWN },
 };
-
-#if CONFIG_AVFILTER
-//static int opt_add_vfilter(void *optctx, const char *opt, const char *arg)
-//{
-//    GROW_ARRAY(vfilters_list, nb_vfilters);
-//    vfilters_list[nb_vfilters - 1] = (const char *)arg;
-//    return 0;
-//}
-#endif
 
 static inline
 int cmp_audio_fmts(enum AVSampleFormat fmt1, int64_t channel_count1,
@@ -3126,18 +3116,6 @@ static void toggle_full_screen(VideoState *is)
     SDL_SetWindowFullscreen(window, is_full_screen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
-static void toggle_audio_display(VideoState *is)
-{
-    int next = is->show_mode;
-    do {
-        next = (next + 1) % VideoState::SHOW_MODE_NB;
-    } while (next != is->show_mode && (next == VideoState::SHOW_MODE_VIDEO && !is->video_st || next != VideoState::SHOW_MODE_VIDEO && !is->audio_st));
-    if (is->show_mode != next) {
-        is->force_refresh = 1;
-        is->show_mode = (VideoState::ShowMode)next;
-    }
-}
-
 static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
     double remaining_time = 0.0;
     SDL_PumpEvents();
@@ -3182,106 +3160,11 @@ static void seek_chapter(VideoState *is, int incr)
 static void event_loop(VideoState *cur_stream)
 {
     SDL_Event event;
-    double incr, pos, frac;
+    double incr, pos;
     
     for (;;) {
-        double x;
         refresh_loop_wait_event(cur_stream, &event);
         switch (event.type) {
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                    case SDLK_f:
-                        toggle_full_screen(cur_stream);
-                        cur_stream->force_refresh = 1;
-                        break;
-                    case SDLK_p:
-                    case SDLK_SPACE:
-                        toggle_pause(cur_stream);
-                        break;
-                    case SDLK_m:
-                        toggle_mute(cur_stream);
-                        break;
-                    case SDLK_KP_MULTIPLY:
-                    case SDLK_0:
-                        update_volume(cur_stream, 1, SDL_VOLUME_STEP);
-                        break;
-                    case SDLK_KP_DIVIDE:
-                    case SDLK_9:
-                        update_volume(cur_stream, -1, SDL_VOLUME_STEP);
-                        break;
-                    case SDLK_s: // S: Step to next frame
-                        step_to_next_frame(cur_stream);
-                        break;
-                    case SDLK_a:
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_AUDIO);
-                        break;
-                    case SDLK_v:
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_VIDEO);
-                        break;
-                    case SDLK_c:
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_VIDEO);
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_AUDIO);
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_SUBTITLE);
-                        break;
-                    case SDLK_t:
-                        stream_cycle_channel(cur_stream, AVMEDIA_TYPE_SUBTITLE);
-                        break;
-                    
-                    case SDLK_PAGEUP:
-                        if (cur_stream->ic->nb_chapters <= 1) {
-                            incr = 600.0;
-                            goto do_seek;
-                        }
-                        seek_chapter(cur_stream, 1);
-                        break;
-                    case SDLK_PAGEDOWN:
-                        if (cur_stream->ic->nb_chapters <= 1) {
-                            incr = -600.0;
-                            goto do_seek;
-                        }
-                        seek_chapter(cur_stream, -1);
-                        break;
-                    case SDLK_LEFT:
-                        incr = -10.0;
-                        goto do_seek;
-                    case SDLK_RIGHT:
-                        incr = 10.0;
-                        goto do_seek;
-                    case SDLK_UP:
-                        incr = 60.0;
-                        goto do_seek;
-                    case SDLK_DOWN:
-                        incr = -60.0;
-                    do_seek:
-                        if (seek_by_bytes) {
-                            pos = -1;
-                            if (pos < 0 && cur_stream->video_stream >= 0)
-                                pos = frame_queue_last_pos(&cur_stream->pictq);
-                            if (pos < 0 && cur_stream->audio_stream >= 0)
-                                pos = frame_queue_last_pos(&cur_stream->sampq);
-                            if (pos < 0)
-                                pos = avio_tell(cur_stream->ic->pb);
-                            if (cur_stream->ic->bit_rate)
-                                incr *= cur_stream->ic->bit_rate / 8.0;
-                            else
-                                incr *= 180000.0;
-                            pos += incr;
-                            stream_seek(cur_stream, pos, incr, 1);
-                        } else {
-                            pos = get_master_clock(cur_stream);
-                            if (isnan(pos))
-                                pos = (double)cur_stream->seek_pos / AV_TIME_BASE;
-                            pos += incr;
-                            if (cur_stream->ic->start_time != AV_NOPTS_VALUE && pos < cur_stream->ic->start_time / (double)AV_TIME_BASE)
-                                pos = cur_stream->ic->start_time / (double)AV_TIME_BASE;
-                            stream_seek(cur_stream, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED:
@@ -3471,32 +3354,6 @@ void show_help_default(const char *opt, const char *arg)
     show_help_options(options, "Main options:", 0, OPT_EXPERT, 0);
     show_help_options(options, "Advanced options:", OPT_EXPERT, 0, 0);
     printf("\n");
-//    show_help_children(avcodec_get_class(), AV_OPT_FLAG_DECODING_PARAM);
-//    show_help_children(avformat_get_class(), AV_OPT_FLAG_DECODING_PARAM);
-#if !CONFIG_AVFILTER
-    show_help_children(sws_get_class(), AV_OPT_FLAG_ENCODING_PARAM);
-#else
-//    show_help_children(avfilter_get_class(), AV_OPT_FLAG_FILTERING_PARAM);
-#endif
-    printf("\nWhile playing:\n"
-           "q, ESC              quit\n"
-           "f                   toggle full screen\n"
-           "p, SPC              pause\n"
-           "m                   toggle mute\n"
-           "9, 0                decrease and increase volume respectively\n"
-           "/, *                decrease and increase volume respectively\n"
-           "a                   cycle audio channel in the current program\n"
-           "v                   cycle video channel\n"
-           "t                   cycle subtitle channel in the current program\n"
-           "c                   cycle program\n"
-           "w                   cycle video filters or show modes\n"
-           "s                   activate frame-step mode\n"
-           "left/right          seek backward/forward 10 seconds\n"
-           "down/up             seek backward/forward 1 minute\n"
-           "page down/page up   seek backward/forward 10 minutes\n"
-           "right mouse click   seek to percentage in file corresponding to fraction of width\n"
-           "left double-click   toggle full screen\n"
-           );
 }
 
 /* Called from the main */

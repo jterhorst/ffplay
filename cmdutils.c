@@ -203,18 +203,6 @@ void show_help_options(const OptionDef *options, const char *msg, int req_flags,
     printf("\n");
 }
 
-void show_help_children(const AVClass *class, int flags)
-{
-    const AVClass *child = NULL;
-    if (class->option) {
-        av_opt_show2(&class, NULL, flags, 0);
-        printf("\n");
-    }
-
-    while (child = av_opt_child_class_next(class, child))
-        show_help_children(child, flags);
-}
-
 static const OptionDef *find_option(const OptionDef *po, const char *name)
 {
     const char *p = strchr(name, ':');
@@ -1420,11 +1408,6 @@ static void print_codec(const AVCodec *c)
     PRINT_CODEC_SUPPORTED(c, channel_layouts, uint64_t, "channel layouts",
                           0, GET_CH_LAYOUT_DESC);
 
-    if (c->priv_class) {
-        show_help_children(c->priv_class,
-                           AV_OPT_FLAG_ENCODING_PARAM |
-                           AV_OPT_FLAG_DECODING_PARAM);
-    }
 }
 
 static char get_media_type_char(enum AVMediaType type)
@@ -1804,8 +1787,6 @@ static void show_help_demuxer(const char *name)
     if (fmt->extensions)
         printf("    Common extensions: %s.\n", fmt->extensions);
 
-    if (fmt->priv_class)
-        show_help_children(fmt->priv_class, AV_OPT_FLAG_DECODING_PARAM);
 }
 
 static void show_help_muxer(const char *name)
@@ -1837,8 +1818,6 @@ static void show_help_muxer(const char *name)
         printf("    Default subtitle codec: %s.\n", desc->name);
     }
 
-    if (fmt->priv_class)
-        show_help_children(fmt->priv_class, AV_OPT_FLAG_ENCODING_PARAM);
 }
 
 #if CONFIG_AVFILTER
@@ -1885,9 +1864,6 @@ static void show_help_filter(const char *name)
     else if (!count)
         printf("        none (sink filter)\n");
 
-    if (f->priv_class)
-        show_help_children(f->priv_class, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_FILTERING_PARAM |
-                                          AV_OPT_FLAG_AUDIO_PARAM);
     if (f->flags & AVFILTER_FLAG_SUPPORT_TIMELINE)
         printf("This filter has support for timeline through the 'enable' option.\n");
 #else
