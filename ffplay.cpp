@@ -29,6 +29,11 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdint.h>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <unordered_map>
+
 
 extern "C" {
 #include "config.h"
@@ -61,9 +66,11 @@ extern "C" {
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
 
-
-
 #include <assert.h>
+
+
+
+
 
 const char program_name[] = "ffplay";
 const int program_birth_year = 2003;
@@ -308,6 +315,25 @@ typedef struct VideoState {
     
     SDL_cond *continue_read_thread;
 } VideoState;
+
+class MediaPlayer {
+    char *input_filename;
+};
+
+class PlayerManager {
+    std::unordered_map <std::string, MediaPlayer*> players;
+    
+    MediaPlayer * playerForFile(const char * filepath);
+};
+
+MediaPlayer * PlayerManager::playerForFile(const char * filepath) {
+    if (players.find(filepath) == players.end()) {
+        MediaPlayer * newPlayer = new MediaPlayer();
+        players[filepath] = newPlayer;
+        return newPlayer;
+    }
+    return players[filepath];
+}
 
 /* options specified by the user */
 static AVInputFormat *file_iformat;
@@ -2848,7 +2874,7 @@ static int read_thread(void *arg)
 #if CONFIG_RTSP_DEMUXER || CONFIG_MMSH_PROTOCOL
         if (is->paused &&
             (!strcmp(ic->iformat->name, "rtsp") ||
-             (ic->pb && !strncmp(input_filename, "mmsh:", 5)))) {
+             (ic->pb && !strncmp(is->filename, "mmsh:", 5)))) {
                 /* wait 10 ms to avoid trying to get another packet */
                 /* XXX: horrible */
                 SDL_Delay(10);
