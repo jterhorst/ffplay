@@ -58,12 +58,13 @@ static int screen_height = 0;
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;
+static MediaPlayer * player;
 static SDL_RendererInfo renderer_info = {0};
 static AVPacket flush_pkt;
 
 void do_exit(VideoState *is)
 {
-    //TODO: loop through media players and call do_kill()
+    player->do_kill();
     
     if (renderer)
         SDL_DestroyRenderer(renderer);
@@ -82,20 +83,6 @@ static void sigterm_handler(int sig)
     exit(123);
 }
 
-static void set_default_window_size(int width, int height, AVRational sar)
-{
-//    SDL_Rect rect;
-//    calculate_display_rect(&rect, 0, 0, INT_MAX, height, width, height, sar);
-//    default_width  = rect.w;
-//    default_height = rect.h;
-}
-/*
-static void toggle_full_screen(VideoState *is)
-{
-    is_full_screen = !is_full_screen;
-    SDL_SetWindowFullscreen(window, is_full_screen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-}
-*/
 void refresh_loop_wait_event(MediaPlayer * player, SDL_Event *event) {
     double remaining_time = 0.0;
     SDL_PumpEvents();
@@ -254,17 +241,17 @@ int main(int argc, char **argv)
         do_exit(NULL);
     }
     
-    MediaPlayer * newPlayer = new MediaPlayer();
-    newPlayer->set_filename((char *)input_filename);
-    newPlayer->set_renderer(renderer, renderer_info);
-    newPlayer->set_flush_pkt(&flush_pkt);
-    newPlayer->set_video_size(640, 480);
+    player = new MediaPlayer();
+    player->set_filename((char *)input_filename);
+    player->set_renderer(renderer, renderer_info);
+    player->set_flush_pkt(&flush_pkt);
+    player->set_video_size(640, 480);
     
     SDL_SetWindowSize(window, 640, 480);
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(window);
     
-    event_loop(newPlayer);
+    event_loop(player);
     
     /* never returns */
     
