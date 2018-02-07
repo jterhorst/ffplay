@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A4D151E202BAB95000976E0 /* mediaplayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4D151C202BAB95000976E0 /* mediaplayer.cpp */; };
 		0A89ED1F202259C6000BCF84 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED18202259C6000BCF84 /* libavutil.a */; };
 		0A89ED20202259C6000BCF84 /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED19202259C6000BCF84 /* libswscale.a */; };
 		0A89ED21202259C6000BCF84 /* libavdevice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A89ED1A202259C6000BCF84 /* libavdevice.a */; };
@@ -53,6 +54,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A4D151C202BAB95000976E0 /* mediaplayer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mediaplayer.cpp; sourceTree = SOURCE_ROOT; };
+		0A4D151D202BAB95000976E0 /* mediaplayer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mediaplayer.hpp; sourceTree = SOURCE_ROOT; };
 		0A89ED18202259C6000BCF84 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = lib/libavutil.a; sourceTree = "<group>"; };
 		0A89ED19202259C6000BCF84 /* libswscale.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswscale.a; path = lib/libswscale.a; sourceTree = "<group>"; };
 		0A89ED1A202259C6000BCF84 /* libavdevice.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavdevice.a; path = lib/libavdevice.a; sourceTree = "<group>"; };
@@ -158,6 +161,8 @@
 			children = (
 				1E5E4FD71C9EA351002E85FA /* cmdutils.c */,
 				1E5E4FD81C9EA351002E85FA /* ffplay.cpp */,
+				0A4D151D202BAB95000976E0 /* mediaplayer.hpp */,
+				0A4D151C202BAB95000976E0 /* mediaplayer.cpp */,
 			);
 			path = ffplay;
 			sourceTree = "<group>";
@@ -219,6 +224,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A4D151E202BAB95000976E0 /* mediaplayer.cpp in Sources */,
 				1E5E4FD91C9EA351002E85FA /* cmdutils.c in Sources */,
 				1E5E4FDA1C9EA351002E85FA /* ffplay.cpp in Sources */,
 			);
