@@ -471,7 +471,7 @@ public:
     int video_open(VideoState *is);
     void video_display(VideoState *is);
     void video_refresh(double *remaining_time);
-    
+    bool video_needs_redraw(double *remaining_time);
     
     void calculate_display_rect(SDL_Rect *rect,
                                 int scr_xleft, int scr_ytop, int scr_width, int scr_height,

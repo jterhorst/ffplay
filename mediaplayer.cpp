@@ -2654,13 +2654,17 @@ void MediaPlayer::video_display(VideoState *is)
     if (!is->width)
         video_open(is);
     
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
     if (is->audio_st && is->show_mode != VideoState::SHOW_MODE_VIDEO)
         video_audio_display(is);
     else if (is->video_st)
         video_image_display(is);
-    SDL_RenderPresent(renderer);
+}
+
+bool MediaPlayer::video_needs_redraw(double * remainder)
+{
+    
+    
+    return false;
 }
 
 /* called to display each frame */

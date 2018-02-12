@@ -90,8 +90,22 @@ void refresh_loop_wait_event(MediaPlayer * player, SDL_Event *event) {
         if (remaining_time > 0.0)
             av_usleep((int64_t)(remaining_time * 1000000.0));
         remaining_time = REFRESH_RATE;
-        if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh))
+        double check_remaining_time = remaining_time;
+        
+        bool should_redraw = player->video_needs_redraw(&check_remaining_time);
+        
+        if (should_redraw) {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+        }
+        if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
             player->video_refresh(&remaining_time);
+        }
+        if (should_redraw) {
+            
+            SDL_RenderPresent(renderer);
+        }
+        
         SDL_PumpEvents();
     }
 }
@@ -224,7 +238,7 @@ int main(int argc, char **argv)
     
     flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE;
     window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, default_width, default_height, flags);
-    //        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     if (window) {
         renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         if (!renderer) {
@@ -248,7 +262,7 @@ int main(int argc, char **argv)
     player->set_video_size(640, 480);
     
     SDL_SetWindowSize(window, 640, 480);
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_SetWindowPosition(window, 0, 1500);
     SDL_ShowWindow(window);
     
     event_loop(player);
