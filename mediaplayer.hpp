@@ -398,6 +398,8 @@ class MediaPlayer {
     const char *subtitle_codec_name;
     const char *video_codec_name;
     
+    bool video_frame_needs_render;
+    
 public:
     VideoState * get_videostate();
     void set_clock_at(Clock *c, double pts, int serial, double time);

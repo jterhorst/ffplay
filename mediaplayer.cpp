@@ -2660,16 +2660,9 @@ void MediaPlayer::video_display(VideoState *is)
         video_image_display(is);
 }
 
-bool MediaPlayer::video_needs_redraw(double * remainder)
+bool MediaPlayer::video_needs_redraw(double * remaining_time)
 {
-    
-    
-    return false;
-}
-
-/* called to display each frame */
-void MediaPlayer::video_refresh(double *remaining_time)
-{
+    video_frame_needs_render = false;
     double time;
     
     Frame *sp, *sp2;
@@ -2781,9 +2774,19 @@ void MediaPlayer::video_refresh(double *remaining_time)
     display:
         /* display picture */
         if (vid_state->force_refresh && vid_state->show_mode == VideoState::SHOW_MODE_VIDEO && vid_state->pictq.rindex_shown)
-            video_display(vid_state);
+            video_frame_needs_render = true;
     }
     vid_state->force_refresh = 0;
+    
+    return video_frame_needs_render;
+}
+
+/* called to display each frame */
+void MediaPlayer::video_refresh(double *remaining_time)
+{
+    if (video_frame_needs_render) {
+        video_display(vid_state);
+    }
 }
 
 void MediaPlayer::seek_chapter(VideoState *is, int incr)
