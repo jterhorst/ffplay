@@ -54,11 +54,6 @@ void MediaPlayer::set_audio_callback_time(int64_t time) {
     audio_callback_time = time;
 }
 
-void MediaPlayer::set_video_size(int width, int height) {
-    video_width = width;
-    video_height = height;
-}
-
 void MediaPlayer::set_renderer(SDL_Renderer * ren, SDL_RendererInfo info) {
     renderer = ren;
     renderer_info = info;
@@ -2124,7 +2119,7 @@ int MediaPlayer::upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsCon
     return ret;
 }
 
-void MediaPlayer::video_image_display(VideoState *is)
+void MediaPlayer::video_image_display(VideoState *is, int available_x, int available_y, int available_width, int available_height)
 {
     Frame *vp;
     Frame *sp = NULL;
@@ -2176,7 +2171,7 @@ void MediaPlayer::video_image_display(VideoState *is)
         }
     }
     
-    calculate_display_rect(&rect, is->xleft, is->ytop, is->width, is->height, vp->width, vp->height, vp->sar);
+    calculate_display_rect(&rect, available_x, available_y, available_width, available_height, vp->width, vp->height, vp->sar);
     
     if (!vp->uploaded) {
         if (upload_texture(&is->vid_texture, vp->frame, &is->img_convert_ctx) < 0)
@@ -2628,36 +2623,13 @@ void MediaPlayer::calculate_display_rect(SDL_Rect *rect,
     rect->h = FFMAX(height, 1);
 }
 
-
-int MediaPlayer::video_open(VideoState *is)
-{
-    int w,h;
-    
-    if (video_width) {
-        w = video_width;
-        h = video_height;
-    } else {
-        w = default_width;
-        h = default_height;
-    }
-    
-    is->width  = w;
-    is->height = h;
-    
-    return 0;
-}
-
-
 /* display the current picture, if any */
-void MediaPlayer::video_display(VideoState *is)
+void MediaPlayer::video_display(VideoState *is, int available_x, int available_y, int available_width, int available_height)
 {
-    if (!is->width)
-        video_open(is);
-    
     if (is->audio_st && is->show_mode != VideoState::SHOW_MODE_VIDEO)
         video_audio_display(is);
     else if (is->video_st)
-        video_image_display(is);
+        video_image_display(is, available_x, available_y, available_width, available_height);
 }
 
 bool MediaPlayer::video_needs_redraw(double * remaining_time)
@@ -2673,7 +2645,7 @@ bool MediaPlayer::video_needs_redraw(double * remaining_time)
     if (vid_state->show_mode != VideoState::SHOW_MODE_VIDEO && vid_state->audio_st) {
         time = av_gettime_relative() / 1000000.0;
         if (vid_state->force_refresh || vid_state->last_vis_time + rdftspeed < time) {
-            video_display(vid_state);
+            video_frame_needs_render = true;
             vid_state->last_vis_time = time;
         }
         *remaining_time = FFMIN(*remaining_time, vid_state->last_vis_time + rdftspeed - time);
@@ -2782,10 +2754,10 @@ bool MediaPlayer::video_needs_redraw(double * remaining_time)
 }
 
 /* called to display each frame */
-void MediaPlayer::video_refresh(double *remaining_time)
+void MediaPlayer::video_refresh(double *remaining_time, int available_x, int available_y, int available_width, int available_height)
 {
     if (video_frame_needs_render) {
-        video_display(vid_state);
+        video_display(vid_state, available_x, available_y, available_width, available_height);
     }
 }
 

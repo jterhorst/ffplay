@@ -360,11 +360,6 @@ class MediaPlayer {
     SDL_RendererInfo renderer_info = {0};
     AVPacket flush_pkt;
     
-    const static int default_width  = 640;
-    const static int default_height = 480;
-    int video_width  = 0;
-    int video_height = 0;
-    
     VideoState * vid_state;
     int av_sync_type = 0;
     int startup_volume = 20;
@@ -469,18 +464,15 @@ public:
     void update_video_pts(VideoState *is, double pts, int64_t pos, int serial);
     static int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
     void video_audio_display(VideoState *s);
-    void video_image_display(VideoState *is);
-    int video_open(VideoState *is);
-    void video_display(VideoState *is);
-    void video_refresh(double *remaining_time);
+    void video_image_display(VideoState *is, int available_x, int available_y, int available_width, int available_height);
+    void video_display(VideoState *is, int available_x, int available_y, int available_width, int available_height);
+    void video_refresh(double *remaining_time, int available_x, int available_y, int available_width, int available_height);
     bool video_needs_redraw(double *remaining_time);
     
     void calculate_display_rect(SDL_Rect *rect,
                                 int scr_xleft, int scr_ytop, int scr_width, int scr_height,
                                 int pic_width, int pic_height, AVRational pic_sar);
     void fill_rectangle(int x, int y, int w, int h);
-    
-    void set_video_size(int width, int height);
     
     void check_external_clock_speed(VideoState *is);
     double get_master_clock(VideoState *is);
