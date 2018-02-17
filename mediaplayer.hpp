@@ -289,9 +289,6 @@ typedef struct VideoState {
     FFTSample *rdft_data;
     int xpos;
     double last_vis_time;
-    SDL_Texture *vis_texture;
-    SDL_Texture *sub_texture;
-    SDL_Texture *vid_texture;
     
     int subtitle_stream;
     AVStream *subtitle_st;
@@ -353,11 +350,17 @@ static const struct TextureFormatEntry {
     { AV_PIX_FMT_NONE,           SDL_PIXELFORMAT_UNKNOWN },
 };
 
+class MediaPlayer;
+
+class MediaPlayerThreadProxy {
+public:
+    MediaPlayer * player;
+    SDL_RendererInfo renderer_info;
+    SDL_Renderer * renderer;
+};
 
 class MediaPlayer {
     char * media_filename;
-    SDL_Renderer * renderer;
-    SDL_RendererInfo renderer_info = {0};
     AVPacket flush_pkt;
     
     VideoState * vid_state;
@@ -426,7 +429,7 @@ public:
     int64_t frame_queue_last_pos(FrameQueue *f);
     void decoder_abort(Decoder *d, FrameQueue *fq);
     void stream_close(VideoState *is);
-    int stream_component_open(VideoState *is, int stream_index);
+    int stream_component_open(VideoState *is, int stream_index, MediaPlayerThreadProxy * proxy);
     void stream_component_close(VideoState *is, int stream_index);
     int packet_queue_put_private(PacketQueue *q, AVPacket *pkt);
     int packet_queue_put(PacketQueue *q, AVPacket *pkt);
@@ -436,16 +439,16 @@ public:
     static int subtitle_thread(void *arg);
     int audio_decode_frame(VideoState *is);
     int stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *queue);
-    void stream_cycle_channel(VideoState *is, int codec_type);
+    void stream_cycle_channel(VideoState *is, int codec_type, MediaPlayerThreadProxy * proxy);
     int synchronize_audio(VideoState *is, int nb_samples);
-    int realloc_texture(SDL_Texture **texture, Uint32 new_format, int new_width, int new_height, SDL_BlendMode blendmode, int init_texture);
-    int decoder_start(Decoder *d, int (*fn)(void *));
+    int realloc_texture(SDL_Texture **texture, SDL_Renderer * renderer, Uint32 new_format, int new_width, int new_height, SDL_BlendMode blendmode, int init_texture);
+    int decoder_start(Decoder *d, int (*fn)(void *), MediaPlayerThreadProxy * proxy);
     static void sdl_audio_callback(void *opaque, Uint8 *stream, int len);
     int audio_open(int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate, struct AudioParams *audio_hw_params);
     int get_video_frame(VideoState *is, AVFrame *frame);
     int cmp_audio_fmts(enum AVSampleFormat fmt1, int64_t channel_count1, enum AVSampleFormat fmt2, int64_t channel_count2);
-    int upload_texture(SDL_Texture **tex, AVFrame *frame, struct SwsContext **img_convert_ctx);
-    int configure_video_filters(AVFilterGraph *graph, VideoState *is, const char *vfilters, AVFrame *frame);
+    int upload_texture(SDL_Texture **tex, SDL_Renderer * renderer, AVFrame *frame, struct SwsContext **img_convert_ctx);
+    int configure_video_filters(AVFilterGraph *graph, VideoState *is, SDL_RendererInfo renderer_info, const char *vfilters, AVFrame *frame);
     int configure_audio_filters(VideoState *is, const char *afilters, int force_output_format);
     
     char * get_afilters();
@@ -464,15 +467,15 @@ public:
     void update_video_pts(VideoState *is, double pts, int64_t pos, int serial);
     static int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duration, int64_t pos, int serial);
     void video_audio_display(VideoState *s);
-    void video_image_display(VideoState *is, int available_x, int available_y, int available_width, int available_height);
-    void video_display(VideoState *is, int available_x, int available_y, int available_width, int available_height);
-    void video_refresh(double *remaining_time, int available_x, int available_y, int available_width, int available_height);
-    bool video_needs_redraw(double *remaining_time);
+    void video_image_display(VideoState *is, SDL_Renderer * renderer, SDL_Texture * sub_texture, SDL_Texture * vid_texture, int available_x, int available_y, int available_width, int available_height);
+    void video_display(VideoState *is, SDL_Renderer * renderer, SDL_Texture * sub_texture, SDL_Texture * vid_texture, int available_x, int available_y, int available_width, int available_height);
+    void video_refresh(double *remaining_time, VideoState *is, SDL_Renderer * renderer, SDL_Texture * sub_texture, SDL_Texture * vid_texture, int available_x, int available_y, int available_width, int available_height);
+    bool video_needs_redraw(double *remaining_time, SDL_Texture * sub_texture);
     
     void calculate_display_rect(SDL_Rect *rect,
                                 int scr_xleft, int scr_ytop, int scr_width, int scr_height,
                                 int pic_width, int pic_height, AVRational pic_sar);
-    void fill_rectangle(int x, int y, int w, int h);
+    void fill_rectangle(SDL_Renderer * renderer, int x, int y, int w, int h);
     
     void check_external_clock_speed(VideoState *is);
     double get_master_clock(VideoState *is);
@@ -483,12 +486,11 @@ public:
     
     static int is_realtime(AVFormatContext *s);
     int64_t get_valid_channel_layout(int64_t channel_layout, int channels);
-    VideoState * stream_open(const char *filename, AVInputFormat *iformat);
+    VideoState * stream_open(const char *filename, AVInputFormat *iformat, MediaPlayerThreadProxy * proxy);
     void set_videostate(VideoState * state);
     void get_sdl_pix_fmt_and_blendmode(int format, Uint32 *sdl_pix_fmt, SDL_BlendMode *sdl_blendmode);
     
-    void set_filename(char * filename);
-    void set_renderer(SDL_Renderer * ren, SDL_RendererInfo info);
+    void set_filename(char * filename, MediaPlayerThreadProxy * proxy);
     void set_flush_pkt(AVPacket * pkt);
     
     void set_seek_by_bytes(int s);
@@ -517,6 +519,7 @@ public:
 
 class PlayerManager {
     std::unordered_map <std::string, MediaPlayer*> players;
+    std::unordered_map<std::string, AVPacket*> flush_packets;
     
     MediaPlayer * playerForFile(const char * filepath);
 };
