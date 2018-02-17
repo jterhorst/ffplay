@@ -51,8 +51,8 @@ const int program_birth_year = 2003;
 static const char *input_filename;
 //static int default_width  = 640;
 //static int default_height = 480;
-//static int screen_width  = 0;
-//static int screen_height = 0;
+static int screen_width  = 0;
+static int screen_height = 0;
 
 static SDL_Texture * sub_texture;
 static SDL_Texture * vid_texture;
@@ -71,6 +71,7 @@ static MediaPlayerThreadProxy proxy;
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static MediaPlayer * player;
+//static PlayerManager * playerManager;
 static SDL_RendererInfo renderer_info = {0};
 static AVPacket flush_pkt;
 
@@ -150,8 +151,8 @@ void event_loop(MediaPlayer * player)
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED:
-//                        screen_width  = player->get_videostate()->width  = event.window.data1;
-//                        screen_height = player->get_videostate()->height = event.window.data2;
+                        screen_width  = player->get_videostate()->width  = event.window.data1;
+                        screen_height = player->get_videostate()->height = event.window.data2;
                         
                     case SDL_WINDOWEVENT_EXPOSED:
                         player->get_videostate()->force_refresh = 1;
@@ -257,8 +258,8 @@ int main(int argc, char **argv)
     SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
     SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
     
-    av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t *)&flush_pkt;
+//    av_init_packet(&flush_pkt);
+//    flush_pkt.data = (uint8_t *)&flush_pkt;
     
     flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE;
     window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 360, flags);
@@ -286,6 +287,8 @@ int main(int argc, char **argv)
     player = new MediaPlayer();
     player->set_filename((char *)input_filename, &proxy);
     player->set_flush_pkt(&flush_pkt);
+//    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
+//    player = playerManager->playerForFile((char *)input_filename, &proxy);
     
     SDL_SetWindowSize(window, 640, 360);
     SDL_SetWindowPosition(window, 0, 1500);

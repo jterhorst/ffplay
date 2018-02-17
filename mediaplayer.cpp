@@ -10,16 +10,36 @@
 
 #pragma mark - PlayerManager
 
-MediaPlayer * PlayerManager::playerForFile(const char * filepath) {
-    if (players.find(filepath) == players.end()) {
-        MediaPlayer * newPlayer = new MediaPlayer();
-        players[filepath] = newPlayer;
+PlayerManager::PlayerManager() {
+    players = std::unordered_map<const char *, MediaPlayer*>();
+    players.clear();
+    flush_packets = std::unordered_map<std::string, AVPacket>();
+}
+
+MediaPlayer * PlayerManager::playerForFile(std::string filepath, MediaPlayerThreadProxy * proxy) {
+    if (players.find((char *)filepath.c_str()) == players.end()) {
+        MediaPlayer * newPlayer = (MediaPlayer *)malloc(sizeof(MediaPlayer));
+        AVPacket flush_pkt;
+        av_init_packet(&flush_pkt);
+        flush_pkt.data = (uint8_t *)&flush_pkt;
+        newPlayer->set_flush_pkt(&flush_pkt);
+        newPlayer->set_filename((char *)filepath.c_str(), proxy);
+//        players[filepath.c_str()] = newPlayer;
+        flush_packets[filepath] = flush_pkt;
         return newPlayer;
     }
-    return players[filepath];
+    return players[filepath.c_str()];
 }
 
 #pragma mark - MediaPlayer
+
+MediaPlayer::MediaPlayer() {
+    
+}
+
+MediaPlayer::~MediaPlayer() {
+    
+}
 
 void MediaPlayer::do_kill() {
     if (vid_state) {

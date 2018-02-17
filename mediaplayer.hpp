@@ -360,6 +360,10 @@ public:
 };
 
 class MediaPlayer {
+public:
+    MediaPlayer();
+    ~MediaPlayer();
+    
     char * media_filename;
     AVPacket flush_pkt;
     
@@ -398,7 +402,7 @@ class MediaPlayer {
     
     bool video_frame_needs_render;
     
-public:
+
     VideoState * get_videostate();
     void set_clock_at(Clock *c, double pts, int serial, double time);
     void set_clock(Clock *c, double pts, int serial);
@@ -518,10 +522,14 @@ public:
 
 
 class PlayerManager {
-    std::unordered_map <std::string, MediaPlayer*> players;
-    std::unordered_map<std::string, AVPacket*> flush_packets;
+public:
+    PlayerManager();
+    ~PlayerManager();
     
-    MediaPlayer * playerForFile(const char * filepath);
+    std::unordered_map <const char *, MediaPlayer*> players;
+    std::unordered_map<std::string, AVPacket> flush_packets;
+    
+    MediaPlayer * playerForFile(std::string filepath, MediaPlayerThreadProxy * proxy);
 };
 
 #endif /* mediaplayer_hpp */
