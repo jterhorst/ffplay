@@ -24,7 +24,7 @@ MediaPlayer * PlayerManager::playerForFile(std::string filepath, MediaPlayerThre
         flush_pkt.data = (uint8_t *)&flush_pkt;
         newPlayer->set_flush_pkt(&flush_pkt);
         newPlayer->set_filename((char *)filepath.c_str(), proxy);
-//        players[filepath.c_str()] = newPlayer;
+        players[filepath.c_str()] = newPlayer;
         flush_packets[filepath] = flush_pkt;
         return newPlayer;
     }
@@ -529,14 +529,15 @@ int MediaPlayer::stream_component_open(VideoState *is, int stream_index, MediaPl
     
     codec = avcodec_find_decoder(avctx->codec_id);
     
-    switch(avctx->codec_type){
-        case AVMEDIA_TYPE_AUDIO   : is->last_audio_stream    = stream_index; forced_codec_name =    audio_codec_name; break;
-        case AVMEDIA_TYPE_SUBTITLE: is->last_subtitle_stream = stream_index; forced_codec_name = subtitle_codec_name; break;
-        case AVMEDIA_TYPE_VIDEO   : is->last_video_stream    = stream_index; forced_codec_name =    video_codec_name; break;
-        default: break;
-    }
-    if (forced_codec_name)
-        codec = avcodec_find_decoder_by_name(forced_codec_name);
+    // I *think* these were just for if the user forced another codec via command line param...
+//    switch(avctx->codec_type){
+//        case AVMEDIA_TYPE_AUDIO   : is->last_audio_stream    = stream_index; forced_codec_name =    audio_codec_name; break;
+//        case AVMEDIA_TYPE_SUBTITLE: is->last_subtitle_stream = stream_index; forced_codec_name = subtitle_codec_name; break;
+//        case AVMEDIA_TYPE_VIDEO   : is->last_video_stream    = stream_index; forced_codec_name =    video_codec_name; break;
+//        default: break;
+//    }
+//    if (forced_codec_name != NULL && strlen(forced_codec_name) > 0)
+//        codec = avcodec_find_decoder_by_name(forced_codec_name);
     if (!codec) {
         if (forced_codec_name) av_log(NULL, AV_LOG_WARNING,
                                       "No codec could be found with name '%s'\n", forced_codec_name);
