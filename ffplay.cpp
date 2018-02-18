@@ -108,7 +108,7 @@ bool should_redraw_frame(double remaining_time, SDL_Texture * sub_tex, SDL_Textu
     return should_redraw;
 }
 
-void refresh_loop_wait_event(MediaPlayer * player, SDL_Event *event) {
+void refresh_loop_wait_event(SDL_Event *event) {
     double remaining_time = 0.0;
     SDL_PumpEvents();
     while (!SDL_PeepEvents(event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
@@ -141,12 +141,12 @@ void refresh_loop_wait_event(MediaPlayer * player, SDL_Event *event) {
 
 
 /* handle an event sent by the GUI */
-void event_loop(MediaPlayer * player)
+void event_loop()
 {
     SDL_Event event;
     
     for (;;) {
-        refresh_loop_wait_event(player, &event);
+        refresh_loop_wait_event(&event);
         switch (event.type) {
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
@@ -294,7 +294,7 @@ int main(int argc, char **argv)
     SDL_SetWindowPosition(window, 0, 1500);
     SDL_ShowWindow(window);
     
-    event_loop(player);
+    event_loop();
     
     /* never returns */
     

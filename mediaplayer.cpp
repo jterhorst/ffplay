@@ -1181,8 +1181,7 @@ int MediaPlayer::subtitle_thread(void *arg)
 int MediaPlayer::read_thread(void *arg)
 {
     MediaPlayerThreadProxy * proxy = (MediaPlayerThreadProxy*)arg;
-    MediaPlayer * player = proxy->player;
-    VideoState * is = player->get_videostate();
+    VideoState * is = proxy->player->get_videostate();
     AVFormatContext *ic = NULL;
     int err, i, ret;
     int st_index[AVMEDIA_TYPE_NB];
@@ -1260,19 +1259,19 @@ int MediaPlayer::read_thread(void *arg)
     if (ic->pb)
         ic->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end
     
-    if (player->get_seek_by_bytes() < 0) {
+    if (proxy->player->get_seek_by_bytes() < 0) {
         int seek_by_bytes = !!(ic->iformat->flags & AVFMT_TS_DISCONT) && strcmp("ogg", ic->iformat->name);
-        player->set_seek_by_bytes(seek_by_bytes);
+        proxy->player->set_seek_by_bytes(seek_by_bytes);
     }
     
     is->max_frame_duration = (ic->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
     
     
     /* if seeking requested, we execute it */
-    if (player->get_start_time() != AV_NOPTS_VALUE) {
+    if (proxy->player->get_start_time() != AV_NOPTS_VALUE) {
         int64_t timestamp;
         
-        timestamp = player->get_start_time();
+        timestamp = proxy->player->get_start_time();
         /* add the stream start time */
         if (ic->start_time != AV_NOPTS_VALUE)
             timestamp += ic->start_time;
@@ -1289,12 +1288,12 @@ int MediaPlayer::read_thread(void *arg)
         AVStream *st = ic->streams[i];
         enum AVMediaType type = st->codecpar->codec_type;
         st->discard = AVDISCARD_ALL;
-        if (type >= 0 && player->get_wanted_stream_spec(type) && st_index[type] == -1)
-            if (avformat_match_stream_specifier(ic, st, player->get_wanted_stream_spec(type)) > 0)
+        if (type >= 0 && proxy->player->get_wanted_stream_spec(type) && st_index[type] == -1)
+            if (avformat_match_stream_specifier(ic, st, proxy->player->get_wanted_stream_spec(type)) > 0)
                 st_index[type] = i;
     }
     for (i = 0; i < AVMEDIA_TYPE_NB; i++) {
-        if (player->get_wanted_stream_spec((AVMediaType)i) && st_index[i] == -1) {
+        if (proxy->player->get_wanted_stream_spec((AVMediaType)i) && st_index[i] == -1) {
             //            av_log(NULL, AV_LOG_ERROR, "Stream specifier %s does not match any %s stream\n", wanted_stream_spec[i], av_get_media_type_string(i));
             st_index[i] = INT_MAX;
         }
@@ -1319,7 +1318,7 @@ int MediaPlayer::read_thread(void *arg)
                              st_index[AVMEDIA_TYPE_VIDEO]),
                             NULL, 0);
     
-    is->show_mode = player->get_show_mode();
+    is->show_mode = proxy->player->get_show_mode();
     if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
         AVStream *st = ic->streams[st_index[AVMEDIA_TYPE_VIDEO]];
         AVCodecParameters *codecpar = st->codecpar;
@@ -1328,18 +1327,18 @@ int MediaPlayer::read_thread(void *arg)
     
     /* open the streams */
     if (st_index[AVMEDIA_TYPE_AUDIO] >= 0) {
-        player->stream_component_open(is, st_index[AVMEDIA_TYPE_AUDIO], proxy);
+        proxy->player->stream_component_open(is, st_index[AVMEDIA_TYPE_AUDIO], proxy);
     }
     
     ret = -1;
     if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
-        ret = player->stream_component_open(is, st_index[AVMEDIA_TYPE_VIDEO], proxy);
+        ret = proxy->player->stream_component_open(is, st_index[AVMEDIA_TYPE_VIDEO], proxy);
     }
     if (is->show_mode == VideoState::SHOW_MODE_NONE)
         is->show_mode = ret >= 0 ? VideoState::SHOW_MODE_VIDEO : VideoState::SHOW_MODE_RDFT;
     
     if (st_index[AVMEDIA_TYPE_SUBTITLE] >= 0) {
-        player->stream_component_open(is, st_index[AVMEDIA_TYPE_SUBTITLE], proxy);
+        proxy->player->stream_component_open(is, st_index[AVMEDIA_TYPE_SUBTITLE], proxy);
     }
     
     if (is->video_stream < 0 && is->audio_stream < 0) {
@@ -1384,36 +1383,36 @@ int MediaPlayer::read_thread(void *arg)
                 //                av_log(NULL, AV_LOG_ERROR, "%s: error while seeking\n", is->ic->url);
             } else {
                 if (is->audio_stream >= 0) {
-                    player->packet_queue_flush(&is->audioq);
-                    player->packet_queue_put(&is->audioq, player->get_flush_pkt());
+                    proxy->player->packet_queue_flush(&is->audioq);
+                    proxy->player->packet_queue_put(&is->audioq, proxy->player->get_flush_pkt());
                 }
                 if (is->subtitle_stream >= 0) {
-                    player->packet_queue_flush(&is->subtitleq);
-                    player->packet_queue_put(&is->subtitleq, player->get_flush_pkt());
+                    proxy->player->packet_queue_flush(&is->subtitleq);
+                    proxy->player->packet_queue_put(&is->subtitleq, proxy->player->get_flush_pkt());
                 }
                 if (is->video_stream >= 0) {
-                    player->packet_queue_flush(&is->videoq);
-                    player->packet_queue_put(&is->videoq, player->get_flush_pkt());
+                    proxy->player->packet_queue_flush(&is->videoq);
+                    proxy->player->packet_queue_put(&is->videoq, proxy->player->get_flush_pkt());
                 }
                 if (is->seek_flags & AVSEEK_FLAG_BYTE) {
-                    player->set_clock(&is->extclk, NAN, 0);
+                    proxy->player->set_clock(&is->extclk, NAN, 0);
                 } else {
-                    player->set_clock(&is->extclk, seek_target / (double)AV_TIME_BASE, 0);
+                    proxy->player->set_clock(&is->extclk, seek_target / (double)AV_TIME_BASE, 0);
                 }
             }
             is->seek_req = 0;
             is->queue_attachments_req = 1;
             is->eof = 0;
             if (is->paused)
-                player->step_to_next_frame(is);
+                proxy->player->step_to_next_frame(is);
         }
         if (is->queue_attachments_req) {
             if (is->video_st && is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC) {
                 AVPacket copy = { 0 };
                 if ((ret = av_packet_ref(&copy, &is->video_st->attached_pic)) < 0)
                     goto fail;
-                player->packet_queue_put(&is->videoq, &copy);
-                player->packet_queue_put_nullpacket(&is->videoq, is->video_stream);
+                proxy->player->packet_queue_put(&is->videoq, &copy);
+                proxy->player->packet_queue_put_nullpacket(&is->videoq, is->video_stream);
             }
             is->queue_attachments_req = 0;
         }
@@ -1421,9 +1420,9 @@ int MediaPlayer::read_thread(void *arg)
         /* if the queue are full, no need to read more */
         if (infinite_buffer<1 &&
             (is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE
-             || (player->stream_has_enough_packets(is->audio_st, is->audio_stream, &is->audioq) &&
-                 player->stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq) &&
-                 player->stream_has_enough_packets(is->subtitle_st, is->subtitle_stream, &is->subtitleq)))) {
+             || (proxy->player->stream_has_enough_packets(is->audio_st, is->audio_stream, &is->audioq) &&
+                 proxy->player->stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq) &&
+                 proxy->player->stream_has_enough_packets(is->subtitle_st, is->subtitle_stream, &is->subtitleq)))) {
                  /* wait 10 ms */
                  SDL_LockMutex(wait_mutex);
                  SDL_CondWaitTimeout(is->continue_read_thread, wait_mutex, 10);
@@ -1431,22 +1430,22 @@ int MediaPlayer::read_thread(void *arg)
                  continue;
              }
         if (!is->paused &&
-            (!is->audio_st || (is->auddec.finished == is->audioq.serial && player->frame_queue_nb_remaining(&is->sampq) == 0)) &&
-            (!is->video_st || (is->viddec.finished == is->videoq.serial && player->frame_queue_nb_remaining(&is->pictq) == 0))) {
-            if (player->get_loop() > 1) {
-                player->stream_seek(is, player->get_start_time() != AV_NOPTS_VALUE ? player->get_start_time() : 0, 0, 0);
-                player->set_loop(player->get_loop() - 1);
+            (!is->audio_st || (is->auddec.finished == is->audioq.serial && proxy->player->frame_queue_nb_remaining(&is->sampq) == 0)) &&
+            (!is->video_st || (is->viddec.finished == is->videoq.serial && proxy->player->frame_queue_nb_remaining(&is->pictq) == 0))) {
+            if (proxy->player->get_loop() > 1) {
+                proxy->player->stream_seek(is, proxy->player->get_start_time() != AV_NOPTS_VALUE ? proxy->player->get_start_time() : 0, 0, 0);
+                proxy->player->set_loop(proxy->player->get_loop() - 1);
             }
         }
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
                 if (is->video_stream >= 0)
-                    player->packet_queue_put_nullpacket(&is->videoq, is->video_stream);
+                    proxy->player->packet_queue_put_nullpacket(&is->videoq, is->video_stream);
                 if (is->audio_stream >= 0)
-                    player->packet_queue_put_nullpacket(&is->audioq, is->audio_stream);
+                    proxy->player->packet_queue_put_nullpacket(&is->audioq, is->audio_stream);
                 if (is->subtitle_stream >= 0)
-                    player->packet_queue_put_nullpacket(&is->subtitleq, is->subtitle_stream);
+                    proxy->player->packet_queue_put_nullpacket(&is->subtitleq, is->subtitle_stream);
                 is->eof = 1;
             }
             if (ic->pb && ic->pb->error)
@@ -1461,18 +1460,18 @@ int MediaPlayer::read_thread(void *arg)
         /* check if packet is in play range specified by user, then queue, otherwise discard */
         stream_start_time = ic->streams[pkt->stream_index]->start_time;
         pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
-        pkt_in_play_range = player->get_duration() == AV_NOPTS_VALUE ||
+        pkt_in_play_range = proxy->player->get_duration() == AV_NOPTS_VALUE ||
         (pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) *
         av_q2d(ic->streams[pkt->stream_index]->time_base) -
-        (double)(player->get_start_time() != AV_NOPTS_VALUE ? player->get_start_time() : 0) / 1000000
-        <= ((double)player->get_duration() / 1000000);
+        (double)(proxy->player->get_start_time() != AV_NOPTS_VALUE ? proxy->player->get_start_time() : 0) / 1000000
+        <= ((double)proxy->player->get_duration() / 1000000);
         if (pkt->stream_index == is->audio_stream && pkt_in_play_range) {
-            player->packet_queue_put(&is->audioq, pkt);
+            proxy->player->packet_queue_put(&is->audioq, pkt);
         } else if (pkt->stream_index == is->video_stream && pkt_in_play_range
                    && !(is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
-            player->packet_queue_put(&is->videoq, pkt);
+            proxy->player->packet_queue_put(&is->videoq, pkt);
         } else if (pkt->stream_index == is->subtitle_stream && pkt_in_play_range) {
-            player->packet_queue_put(&is->subtitleq, pkt);
+            proxy->player->packet_queue_put(&is->subtitleq, pkt);
         } else {
             av_packet_unref(pkt);
         }
