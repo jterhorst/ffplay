@@ -59,6 +59,7 @@ typedef struct ScreenElement {
     int y = 0;
     int width = 360;
     int height = 280;
+    MediaPlayer * player;
 } ScreenElement;
 
 static std::vector<ScreenElement> elements;
@@ -69,16 +70,15 @@ static MediaPlayerThreadProxy proxy;
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;
-static MediaPlayer * player;
-//static PlayerManager * playerManager;
+static PlayerManager * playerManager;
 static SDL_RendererInfo renderer_info = {0};
 static AVPacket flush_pkt;
 
-void do_exit(VideoState *is)
+void do_exit()
 {
-    player->do_kill();
-    
     for (int x = 0; x < elements.size(); x++) {
+        if (elements[x].player)
+            elements[x].player->do_kill();
         if (elements[x].vid_texture)
             SDL_DestroyTexture(elements[x].vid_texture);
         if (elements[x].sub_texture)
@@ -103,14 +103,32 @@ static void sigterm_handler(int sig)
 }
 
 bool should_redraw_frame(double remaining_time) {
-    double remainder = remaining_time;
-    bool should_redraw = player->video_needs_redraw(&remainder, elements[0].sub_texture);
-//    for (int x = 0; x < elements.size(); x++) {
-//        double remainder = remaining_time;
-//        if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
-//            should_redraw = true;
-//        }
-//    }
+//    double remainder = remaining_time;
+    bool should_redraw = false;//player->video_needs_redraw(&remainder, elements[0].sub_texture);
+    std::vector<MediaPlayer*> updated_players;
+    
+    
+    for (int x = 0; x < elements.size(); x++) {
+        double remainder = remaining_time;
+        MediaPlayer * player = elements[x].player;
+        if (!updated_players.empty()) {
+            if (std::find(updated_players.begin(), updated_players.end(), player) != updated_players.end()) {
+                /* v contains x */
+            } else {
+                /* v does not contain x */
+                updated_players.push_back(player);
+                if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
+                    should_redraw = true;
+                }
+            }
+        } else {
+            updated_players.push_back(player);
+            if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
+                should_redraw = true;
+            }
+        }
+
+    }
     
     return should_redraw;
 }
@@ -129,12 +147,15 @@ void refresh_loop_wait_event(SDL_Event *event) {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
         }
-        if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
-            for (int x = 0; x < elements.size(); x++) {
-                double remainder = remaining_time;
+        
+        for (int x = 0; x < elements.size(); x++) {
+            double remainder = remaining_time;
+            MediaPlayer * player = elements[x].player;
+            if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
                 player->video_refresh(&remainder, player->get_videostate(), renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
             }
         }
+        
         if (should_redraw) {
             
             SDL_RenderPresent(renderer);
@@ -156,17 +177,25 @@ void event_loop()
         switch (event.type) {
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
-                    case SDL_WINDOWEVENT_RESIZED:
-                        screen_width  = player->get_videostate()->width  = event.window.data1;
-                        screen_height = player->get_videostate()->height = event.window.data2;
+                    case SDL_WINDOWEVENT_RESIZED: {
+                        for (int x = 0; x < elements.size(); x++) {
+                            MediaPlayer * player = elements[x].player;
+                            float screen_width  = player->get_videostate()->width  = event.window.data1;
+                            float screen_height = player->get_videostate()->height = event.window.data2;
+                        }
                         
-                    case SDL_WINDOWEVENT_EXPOSED:
-                        player->get_videostate()->force_refresh = 1;
+                    }
+                    case SDL_WINDOWEVENT_EXPOSED: {
+                        for (int x = 0; x < elements.size(); x++) {
+                            MediaPlayer * player = elements[x].player;
+                            player->get_videostate()->force_refresh = 1;
+                        }
+                    }
                 }
                 break;
             case SDL_QUIT:
             case FF_QUIT_EVENT:
-                do_exit(player->get_videostate());
+                do_exit();
                 break;
             default:
                 break;
@@ -264,9 +293,6 @@ int main(int argc, char **argv)
     SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
     SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
     
-//    av_init_packet(&flush_pkt);
-//    flush_pkt.data = (uint8_t *)&flush_pkt;
-    
     int width = 640;
     int height = 360;
     
@@ -286,18 +312,29 @@ int main(int argc, char **argv)
     }
     if (!window || !renderer || !renderer_info.num_texture_formats) {
         av_log(NULL, AV_LOG_FATAL, "Failed to create window or renderer: %s", SDL_GetError());
-        do_exit(NULL);
+        do_exit();
     }
     
     proxy = MediaPlayerThreadProxy();
     proxy.renderer_info = renderer_info;
     proxy.renderer = renderer;
     
+    //    player = new MediaPlayer();
+    //    player->set_filename((char *)input_filename, &proxy);
+    //    player->set_flush_pkt(&flush_pkt);
+    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
+//    MediaPlayer * player = playerManager->playerForFile((char *)input_filename, &proxy);
+    
+    MediaPlayer * player = new MediaPlayer();
+    player->set_filename((char *)input_filename, &proxy);
+    player->set_flush_pkt(&flush_pkt);
+    
     ScreenElement element = ScreenElement();
     element.x = 0;
     element.y = 0;
     element.width = width/2;
     element.height = height/2;
+    element.player = player;
     elements.push_back(element);
     
     ScreenElement element2 = ScreenElement();
@@ -305,13 +342,24 @@ int main(int argc, char **argv)
     element2.y = 0;
     element2.width = width/2;
     element2.height = height/2;
+    element2.player = player;
     elements.push_back(element2);
     
-    player = new MediaPlayer();
-    player->set_filename((char *)input_filename, &proxy);
-    player->set_flush_pkt(&flush_pkt);
-//    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
-//    player = playerManager->playerForFile((char *)input_filename, &proxy);
+    ScreenElement element3 = ScreenElement();
+    element3.x = 0;
+    element3.y = height/2;
+    element3.width = width/2;
+    element3.height = height/2;
+    element3.player = player;
+    elements.push_back(element3);
+    
+    ScreenElement element4 = ScreenElement();
+    element4.x = width/2;
+    element4.y = height/2;
+    element4.width = width/2;
+    element4.height = height/2;
+    element4.player = player;
+    elements.push_back(element4);
     
     
     SDL_SetWindowSize(window, width, height);
