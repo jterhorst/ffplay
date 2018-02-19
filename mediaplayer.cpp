@@ -18,7 +18,7 @@ PlayerManager::PlayerManager() {
 
 MediaPlayer * PlayerManager::playerForFile(std::string filepath, MediaPlayerThreadProxy * proxy) {
     if (players.empty() || players.find(filepath) == players.end()) {
-        MediaPlayer * newPlayer = new MediaPlayer();//(MediaPlayer *)malloc(sizeof(MediaPlayer));
+        MediaPlayer * newPlayer = new MediaPlayer();
         AVPacket flush_pkt;
         av_init_packet(&flush_pkt);
         flush_pkt.data = (uint8_t *)&flush_pkt;

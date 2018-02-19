@@ -103,10 +103,8 @@ static void sigterm_handler(int sig)
 }
 
 bool should_redraw_frame(double remaining_time) {
-//    double remainder = remaining_time;
-    bool should_redraw = false;//player->video_needs_redraw(&remainder, elements[0].sub_texture);
+    bool should_redraw = false;
     std::vector<MediaPlayer*> updated_players;
-    
     
     for (int x = 0; x < elements.size(); x++) {
         double remainder = remaining_time;
@@ -127,9 +125,7 @@ bool should_redraw_frame(double remaining_time) {
                 should_redraw = true;
             }
         }
-
     }
-    
     return should_redraw;
 }
 
@@ -138,7 +134,7 @@ void refresh_loop_wait_event(SDL_Event *event) {
     SDL_PumpEvents();
     while (!SDL_PeepEvents(event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
         if (remaining_time > 0.0)
-            av_usleep((int64_t)(remaining_time * 1000000.0));
+            av_usleep((unsigned int)(remaining_time * 1000000.0));
         remaining_time = REFRESH_RATE;
         
         bool should_redraw = should_redraw_frame(remaining_time);
@@ -182,6 +178,7 @@ void event_loop()
                             MediaPlayer * player = elements[x].player;
                             float screen_width  = player->get_videostate()->width  = event.window.data1;
                             float screen_height = player->get_videostate()->height = event.window.data2;
+                            printf("screen: %f, %f", screen_width, screen_height);
                         }
                         
                     }
