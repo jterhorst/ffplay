@@ -49,8 +49,6 @@ const int program_birth_year = 2003;
 
 /* options specified by the user */
 static const char *input_filename;
-static int screen_width  = 0;
-static int screen_height = 0;
 
 typedef struct ScreenElement {
     SDL_Texture * sub_texture;
@@ -62,33 +60,44 @@ typedef struct ScreenElement {
     MediaPlayer * player;
 } ScreenElement;
 
-static std::vector<ScreenElement> elements;
+typedef struct Screen {
+    SDL_Window * window;
+    SDL_Renderer * renderer;
+    SDL_RendererInfo renderer_info = {0};
+    MediaPlayerThreadProxy proxy;
+    std::vector<ScreenElement> elements;
+} Screen;
 
-static MediaPlayerThreadProxy proxy;
+static std::vector<Screen> screens;
+
+//static MediaPlayerThreadProxy proxy;
 
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
-static SDL_Window *window;
-static SDL_Renderer *renderer;
+//static SDL_Window *window;
+//static SDL_Renderer *renderer;
 static PlayerManager * playerManager;
-static SDL_RendererInfo renderer_info = {0};
-static AVPacket flush_pkt;
+//static SDL_RendererInfo renderer_info = {0};
 
 void do_exit()
 {
-    for (int x = 0; x < elements.size(); x++) {
-        if (elements[x].player)
-            elements[x].player->do_kill();
-        if (elements[x].vid_texture)
-            SDL_DestroyTexture(elements[x].vid_texture);
-        if (elements[x].sub_texture)
-            SDL_DestroyTexture(elements[x].sub_texture);
+    for (int i = 0; i < screens.size(); i++) {
+        for (int x = 0; x < screens[i].elements.size(); x++) {
+            if (screens[i].elements[x].player)
+                screens[i].elements[x].player->do_kill();
+            if (screens[i].elements[x].vid_texture)
+                SDL_DestroyTexture(screens[i].elements[x].vid_texture);
+            if (screens[i].elements[x].sub_texture)
+                SDL_DestroyTexture(screens[i].elements[x].sub_texture);
+        }
+        
+        if (screens[i].renderer)
+            SDL_DestroyRenderer(screens[i].renderer);
+        if (screens[i].window)
+            SDL_DestroyWindow(screens[i].window);
     }
     
-    if (renderer)
-        SDL_DestroyRenderer(renderer);
-    if (window)
-        SDL_DestroyWindow(window);
+    
     uninit_opts();
 
     avformat_network_deinit();
@@ -106,26 +115,30 @@ bool should_redraw_frame(double remaining_time) {
     bool should_redraw = false;
     std::vector<MediaPlayer*> updated_players;
     
-    for (int x = 0; x < elements.size(); x++) {
-        double remainder = remaining_time;
-        MediaPlayer * player = elements[x].player;
-        if (!updated_players.empty()) {
-            if (std::find(updated_players.begin(), updated_players.end(), player) != updated_players.end()) {
-                /* v contains x */
+    for (int i = 0; i < screens.size(); i++) {
+        std::vector<ScreenElement> elements = screens[i].elements;
+        for (int x = 0; x < elements.size(); x++) {
+            double remainder = remaining_time;
+            MediaPlayer * player = elements[x].player;
+            if (!updated_players.empty()) {
+                if (std::find(updated_players.begin(), updated_players.end(), player) != updated_players.end()) {
+                    /* v contains x */
+                } else {
+                    /* v does not contain x */
+                    updated_players.push_back(player);
+                    if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
+                        should_redraw = true;
+                    }
+                }
             } else {
-                /* v does not contain x */
                 updated_players.push_back(player);
                 if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
                     should_redraw = true;
                 }
             }
-        } else {
-            updated_players.push_back(player);
-            if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
-                should_redraw = true;
-            }
         }
     }
+    
     return should_redraw;
 }
 
@@ -140,21 +153,27 @@ void refresh_loop_wait_event(SDL_Event *event) {
         bool should_redraw = should_redraw_frame(remaining_time);
         
         if (should_redraw) {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
+            for (int i = 0; i < screens.size(); i++) {
+                SDL_SetRenderDrawColor(screens[i].renderer, 0, 0, 0, 255);
+                SDL_RenderClear(screens[i].renderer);
+            }
         }
         
-        for (int x = 0; x < elements.size(); x++) {
-            double remainder = remaining_time;
-            MediaPlayer * player = elements[x].player;
-            if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
-                player->video_refresh(&remainder, player->get_videostate(), renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
+        for (int i = 0; i < screens.size(); i++) {
+            std::vector<ScreenElement> elements = screens[i].elements;
+            for (int x = 0; x < elements.size(); x++) {
+                double remainder = remaining_time;
+                MediaPlayer * player = elements[x].player;
+                if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
+                    player->video_refresh(&remainder, player->get_videostate(), screens[i].renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
+                }
             }
         }
         
         if (should_redraw) {
-            
-            SDL_RenderPresent(renderer);
+            for (int i = 0; i < screens.size(); i++) {
+                SDL_RenderPresent(screens[i].renderer);
+            }
         }
         
         SDL_PumpEvents();
@@ -174,18 +193,23 @@ void event_loop()
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED: {
-                        for (int x = 0; x < elements.size(); x++) {
-                            MediaPlayer * player = elements[x].player;
-                            float screen_width  = player->get_videostate()->width  = event.window.data1;
-                            float screen_height = player->get_videostate()->height = event.window.data2;
-                            printf("screen: %f, %f", screen_width, screen_height);
+                        for (int i = 0; i < screens.size(); i++) {
+                            std::vector<ScreenElement> elements = screens[i].elements;
+                            for (int x = 0; x < elements.size(); x++) {
+                                MediaPlayer * player = elements[x].player;
+                                float screen_width  = player->get_videostate()->width  = event.window.data1;
+                                float screen_height = player->get_videostate()->height = event.window.data2;
+                                printf("screen: %f, %f", screen_width, screen_height);
+                            }
                         }
-                        
                     }
                     case SDL_WINDOWEVENT_EXPOSED: {
-                        for (int x = 0; x < elements.size(); x++) {
-                            MediaPlayer * player = elements[x].player;
-                            player->get_videostate()->force_refresh = 1;
+                        for (int i = 0; i < screens.size(); i++) {
+                            std::vector<ScreenElement> elements = screens[i].elements;
+                            for (int x = 0; x < elements.size(); x++) {
+                                MediaPlayer * player = elements[x].player;
+                                player->get_videostate()->force_refresh = 1;
+                            }
                         }
                     }
                 }
@@ -237,6 +261,48 @@ void show_help_default(const char *opt, const char *arg)
     show_help_options(options, "Main options:", 0, OPT_EXPERT, 0);
     show_help_options(options, "Advanced options:", OPT_EXPERT, 0, 0);
     printf("\n");
+}
+
+Screen _create_screen(int x, int y, int w, int h, bool preview) {
+    int flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE;
+    if (preview) {
+        flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_BORDERLESS;
+    }
+    SDL_Window * window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags);
+    SDL_Renderer * renderer;
+    SDL_RendererInfo renderer_info;
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    if (window) {
+        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (!renderer) {
+            av_log(NULL, AV_LOG_WARNING, "Failed to initialize a hardware accelerated renderer: %s\n", SDL_GetError());
+            renderer = SDL_CreateRenderer(window, -1, 0);
+        }
+        if (renderer) {
+            if (!SDL_GetRendererInfo(renderer, &renderer_info))
+                av_log(NULL, AV_LOG_VERBOSE, "Initialized %s renderer.\n", renderer_info.name);
+        }
+    }
+    if (!window || !renderer || !renderer_info.num_texture_formats) {
+        av_log(NULL, AV_LOG_FATAL, "Failed to create window or renderer: %s", SDL_GetError());
+        do_exit();
+    }
+    
+    SDL_SetWindowSize(window, w, h);
+    SDL_SetWindowPosition(window, x, y);
+    SDL_ShowWindow(window);
+    
+    MediaPlayerThreadProxy proxy = MediaPlayerThreadProxy();
+    proxy.renderer_info = renderer_info;
+    proxy.renderer = renderer;
+    
+    Screen scr = Screen();
+    scr.window = window;
+    scr.renderer = renderer;
+    scr.renderer_info = renderer_info;
+    scr.proxy = proxy;
+    
+    return scr;
 }
 
 /* Called from the main */
@@ -293,32 +359,12 @@ int main(int argc, char **argv)
     int width = 640;
     int height = 360;
     
-    flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE;
-    window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    if (window) {
-        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-        if (!renderer) {
-            av_log(NULL, AV_LOG_WARNING, "Failed to initialize a hardware accelerated renderer: %s\n", SDL_GetError());
-            renderer = SDL_CreateRenderer(window, -1, 0);
-        }
-        if (renderer) {
-            if (!SDL_GetRendererInfo(renderer, &renderer_info))
-                av_log(NULL, AV_LOG_VERBOSE, "Initialized %s renderer.\n", renderer_info.name);
-        }
-    }
-    if (!window || !renderer || !renderer_info.num_texture_formats) {
-        av_log(NULL, AV_LOG_FATAL, "Failed to create window or renderer: %s", SDL_GetError());
-        do_exit();
-    }
-    
-    proxy = MediaPlayerThreadProxy();
-    proxy.renderer_info = renderer_info;
-    proxy.renderer = renderer;
-    
     playerManager = new PlayerManager();
-    MediaPlayer * player = playerManager->playerForFile((char *)input_filename, &proxy);
     
+    
+    Screen main_scr = _create_screen(0, 1500, width, height, false);
+    
+    MediaPlayer * player = playerManager->playerForFile((char *)input_filename, &main_scr.proxy);
     
     ScreenElement element = ScreenElement();
     element.x = 0;
@@ -326,7 +372,7 @@ int main(int argc, char **argv)
     element.width = width/2;
     element.height = height/2;
     element.player = player;
-    elements.push_back(element);
+    main_scr.elements.push_back(element);
     
     ScreenElement element2 = ScreenElement();
     element2.x = width/2;
@@ -334,7 +380,7 @@ int main(int argc, char **argv)
     element2.width = width/2;
     element2.height = height/2;
     element2.player = player;
-    elements.push_back(element2);
+    main_scr.elements.push_back(element2);
     
     ScreenElement element3 = ScreenElement();
     element3.x = 0;
@@ -342,7 +388,7 @@ int main(int argc, char **argv)
     element3.width = width/2;
     element3.height = height/2;
     element3.player = player;
-    elements.push_back(element3);
+    main_scr.elements.push_back(element3);
     
     ScreenElement element4 = ScreenElement();
     element4.x = width/2;
@@ -350,12 +396,23 @@ int main(int argc, char **argv)
     element4.width = width/2;
     element4.height = height/2;
     element4.player = player;
-    elements.push_back(element4);
+    main_scr.elements.push_back(element4);
+    
+    screens.push_back(main_scr);
+    
+    Screen preview_scr = _create_screen(0, 0, width*0.25, height*0.25, true);
+    
+    ScreenElement preview_element = ScreenElement();
+    preview_element.x = 0;
+    preview_element.y = 0;
+    preview_element.width = width*0.25;
+    preview_element.height = height*0.25;
+    preview_element.player = player;
+    preview_scr.elements.push_back(preview_element);
+    
+    screens.push_back(preview_scr);
     
     
-    SDL_SetWindowSize(window, width, height);
-    SDL_SetWindowPosition(window, 0, 1500);
-    SDL_ShowWindow(window);
     
     event_loop();
     
