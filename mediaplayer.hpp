@@ -383,7 +383,8 @@ public:
     const static int infinite_buffer = -1;
     int decoder_reorder_pts = -1;
     int lowres = 0;
-    int loop = 1;
+    int play_count = 1;
+    bool infinite_play_loop = false;
     int autorotate = 1;
     int fast = 0;
     int framedrop = -1;
@@ -504,8 +505,10 @@ public:
     int64_t get_start_time();
     int64_t get_duration();
     
-    int get_loop();
-    void set_loop(int l);
+    int get_play_count();
+    void set_play_count(int l);
+    bool is_infinite_loop();
+    void set_infinite_loop(bool flag);
     
     VideoState::ShowMode get_show_mode();
     

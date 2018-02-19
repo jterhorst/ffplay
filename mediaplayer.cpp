@@ -55,12 +55,20 @@ void MediaPlayer::do_kill() {
     is_dead = true;
 }
 
-int MediaPlayer::get_loop() {
-    return loop;
+int MediaPlayer::get_play_count() {
+    return play_count;
 }
 
-void MediaPlayer::set_loop(int l) {
-    loop = l;
+void MediaPlayer::set_play_count(int l) {
+    play_count = l;
+}
+
+bool MediaPlayer::is_infinite_loop() {
+    return infinite_play_loop;
+}
+
+void MediaPlayer::set_infinite_loop(bool flag) {
+    infinite_play_loop = flag;
 }
 
 void MediaPlayer::set_seek_by_bytes(int s) {
@@ -1440,9 +1448,11 @@ int MediaPlayer::read_thread(void *arg)
         if (!is->paused &&
             (!is->audio_st || (is->auddec.finished == is->audioq.serial && proxy->player->frame_queue_nb_remaining(&is->sampq) == 0)) &&
             (!is->video_st || (is->viddec.finished == is->videoq.serial && proxy->player->frame_queue_nb_remaining(&is->pictq) == 0))) {
-            if (proxy->player->get_loop() > 1) {
+            if (proxy->player->get_play_count() > 1 || proxy->player->is_infinite_loop()) {
                 proxy->player->stream_seek(is, proxy->player->get_start_time() != AV_NOPTS_VALUE ? proxy->player->get_start_time() : 0, 0, 0);
-                proxy->player->set_loop(proxy->player->get_loop() - 1);
+                if (proxy->player->get_play_count() > 1) {
+                    proxy->player->set_play_count(proxy->player->get_play_count() - 1);
+                }
             }
         }
         ret = av_read_frame(ic, pkt);

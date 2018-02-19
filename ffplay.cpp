@@ -70,14 +70,9 @@ typedef struct Screen {
 
 static std::vector<Screen> screens;
 
-//static MediaPlayerThreadProxy proxy;
-
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
-//static SDL_Window *window;
-//static SDL_Renderer *renderer;
 static PlayerManager * playerManager;
-//static SDL_RendererInfo renderer_info = {0};
 
 void do_exit()
 {
@@ -268,10 +263,10 @@ Screen _create_screen(int x, int y, int w, int h, bool preview) {
     if (preview) {
         flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_BORDERLESS;
     }
-    SDL_Window * window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags);
+    SDL_Window * window = SDL_CreateWindow("ASSPANTS DEMO", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags);
     SDL_Renderer * renderer;
     SDL_RendererInfo renderer_info;
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+//    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     if (window) {
         renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         if (!renderer) {
@@ -356,8 +351,17 @@ int main(int argc, char **argv)
     SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
     SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
     
+    float ratio = 0.5625;
     int width = 640;
-    int height = 360;
+    int height = width * ratio;
+    
+    SDL_DisplayMode current;
+    int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
+    if (should_be_zero == 0) {
+        SDL_Log("Display #%d: current display mode is %dx%dpx @ %dhz.", 0, current.w, current.h, current.refresh_rate);
+        width = current.w;
+        height = current.h;
+    }
     
     playerManager = new PlayerManager();
     
@@ -369,11 +373,11 @@ int main(int argc, char **argv)
     ScreenElement element = ScreenElement();
     element.x = 0;
     element.y = 0;
-    element.width = width/2;
-    element.height = height/2;
+    element.width = width;
+    element.height = height;
     element.player = player;
     main_scr.elements.push_back(element);
-    
+    /*
     ScreenElement element2 = ScreenElement();
     element2.x = width/2;
     element2.y = 0;
@@ -397,7 +401,7 @@ int main(int argc, char **argv)
     element4.height = height/2;
     element4.player = player;
     main_scr.elements.push_back(element4);
-    
+    */
     screens.push_back(main_scr);
     
     Screen preview_scr = _create_screen(0, 0, width*0.25, height*0.25, true);
