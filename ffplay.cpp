@@ -130,15 +130,10 @@ void refresh_loop_wait_event(SDL_Event *event) {
             SDL_RenderClear(renderer);
         }
         if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
-//            for (int x = 0; x < elements.size(); x++) {
-//                double remainder = remaining_time;
-//                player->video_refresh(&remainder, player->get_videostate(), renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
-//            }
-            
-            double rem1 = remaining_time;
-            player->video_refresh(&rem1, player->get_videostate(), renderer, elements[0].sub_texture, elements[0].vid_texture, elements[0].x, elements[0].y, elements[0].width, elements[0].height);
-            double rem2 = remaining_time;
-            player->video_refresh(&rem2, player->get_videostate(), renderer, elements[1].sub_texture, elements[1].vid_texture, elements[1].x, elements[1].y, elements[1].width, elements[1].height);
+            for (int x = 0; x < elements.size(); x++) {
+                double remainder = remaining_time;
+                player->video_refresh(&remainder, player->get_videostate(), renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
+            }
         }
         if (should_redraw) {
             
@@ -318,9 +313,6 @@ int main(int argc, char **argv)
 //    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
 //    player = playerManager->playerForFile((char *)input_filename, &proxy);
     
-    
-    
-
     
     SDL_SetWindowSize(window, width, height);
     SDL_SetWindowPosition(window, 0, 1500);
