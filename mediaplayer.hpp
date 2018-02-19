@@ -367,6 +367,7 @@ public:
     char * media_filename;
     AVPacket flush_pkt;
     
+    bool is_dead;
     VideoState * vid_state;
     int av_sync_type = 0;
     int startup_volume = 20;

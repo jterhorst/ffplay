@@ -42,12 +42,17 @@ MediaPlayer::~MediaPlayer() {
 }
 
 void MediaPlayer::do_kill() {
+    if (is_dead) {
+        return;
+    }
+    
     if (vid_state) {
         stream_close(vid_state);
     }
 #if CONFIG_AVFILTER
     av_freep(&vfilters_list);
 #endif
+    is_dead = true;
 }
 
 int MediaPlayer::get_loop() {
