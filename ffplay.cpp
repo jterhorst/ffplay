@@ -49,20 +49,19 @@ const int program_birth_year = 2003;
 
 /* options specified by the user */
 static const char *input_filename;
-//static int default_width  = 640;
-//static int default_height = 480;
 static int screen_width  = 0;
 static int screen_height = 0;
 
-static SDL_Texture * sub_texture;
-static SDL_Texture * vid_texture;
+typedef struct ScreenElement {
+    SDL_Texture * sub_texture;
+    SDL_Texture * vid_texture;
+    int x = 0;
+    int y = 0;
+    int width = 360;
+    int height = 280;
+} ScreenElement;
 
-static SDL_Texture * sub_texture_preview;
-static SDL_Texture * vid_texture_preview;
-
-
-
-//static std::vector<>
+static std::vector<ScreenElement> elements;
 
 static MediaPlayerThreadProxy proxy;
 
@@ -79,10 +78,12 @@ void do_exit(VideoState *is)
 {
     player->do_kill();
     
-    if (vid_texture)
-        SDL_DestroyTexture(vid_texture);
-    if (sub_texture)
-        SDL_DestroyTexture(sub_texture);
+    for (int x = 0; x < elements.size(); x++) {
+        if (elements[x].vid_texture)
+            SDL_DestroyTexture(elements[x].vid_texture);
+        if (elements[x].sub_texture)
+            SDL_DestroyTexture(elements[x].sub_texture);
+    }
     
     if (renderer)
         SDL_DestroyRenderer(renderer);
@@ -101,9 +102,15 @@ static void sigterm_handler(int sig)
     exit(123);
 }
 
-bool should_redraw_frame(double remaining_time, SDL_Texture * sub_tex, SDL_Texture * vid_tex) {
+bool should_redraw_frame(double remaining_time) {
     double remainder = remaining_time;
-    bool should_redraw = player->video_needs_redraw(&remainder, sub_tex);
+    bool should_redraw = player->video_needs_redraw(&remainder, elements[0].sub_texture);
+//    for (int x = 0; x < elements.size(); x++) {
+//        double remainder = remaining_time;
+//        if (player->video_needs_redraw(&remainder, elements[x].sub_texture)) {
+//            should_redraw = true;
+//        }
+//    }
     
     return should_redraw;
 }
@@ -116,18 +123,22 @@ void refresh_loop_wait_event(SDL_Event *event) {
             av_usleep((int64_t)(remaining_time * 1000000.0));
         remaining_time = REFRESH_RATE;
         
-        bool should_redraw = should_redraw_frame(remaining_time, sub_texture, vid_texture);
+        bool should_redraw = should_redraw_frame(remaining_time);
         
         if (should_redraw) {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
         }
         if (player->get_videostate()->show_mode != VideoState::SHOW_MODE_NONE && (!player->get_videostate()->paused || player->get_videostate()->force_refresh)) {
-            player->video_refresh(&remaining_time, player->get_videostate(), renderer, sub_texture, vid_texture, 0, 0, 320, 280);
-            player->video_refresh(&remaining_time, player->get_videostate(), renderer, sub_texture_preview, vid_texture_preview, 320, 0, 320, 280);
-            player->video_refresh(&remaining_time, player->get_videostate(), renderer, sub_texture, vid_texture, 0, 280, 320, 280);
-            player->video_refresh(&remaining_time, player->get_videostate(), renderer, sub_texture, vid_texture, 320, 280, 320, 280);
+//            for (int x = 0; x < elements.size(); x++) {
+//                double remainder = remaining_time;
+//                player->video_refresh(&remainder, player->get_videostate(), renderer, elements[x].sub_texture, elements[x].vid_texture, elements[x].x, elements[x].y, elements[x].width, elements[x].height);
+//            }
             
+            double rem1 = remaining_time;
+            player->video_refresh(&rem1, player->get_videostate(), renderer, elements[0].sub_texture, elements[0].vid_texture, elements[0].x, elements[0].y, elements[0].width, elements[0].height);
+            double rem2 = remaining_time;
+            player->video_refresh(&rem2, player->get_videostate(), renderer, elements[1].sub_texture, elements[1].vid_texture, elements[1].x, elements[1].y, elements[1].width, elements[1].height);
         }
         if (should_redraw) {
             
@@ -261,8 +272,11 @@ int main(int argc, char **argv)
 //    av_init_packet(&flush_pkt);
 //    flush_pkt.data = (uint8_t *)&flush_pkt;
     
+    int width = 640;
+    int height = 360;
+    
     flags = SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE;
-    window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 360, flags);
+    window = SDL_CreateWindow(program_name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     if (window) {
         renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -284,13 +298,31 @@ int main(int argc, char **argv)
     proxy.renderer_info = renderer_info;
     proxy.renderer = renderer;
     
+    ScreenElement element = ScreenElement();
+    element.x = 0;
+    element.y = 0;
+    element.width = width/2;
+    element.height = height/2;
+    elements.push_back(element);
+    
+    ScreenElement element2 = ScreenElement();
+    element2.x = width/2;
+    element2.y = 0;
+    element2.width = width/2;
+    element2.height = height/2;
+    elements.push_back(element2);
+    
     player = new MediaPlayer();
     player->set_filename((char *)input_filename, &proxy);
     player->set_flush_pkt(&flush_pkt);
 //    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
 //    player = playerManager->playerForFile((char *)input_filename, &proxy);
     
-    SDL_SetWindowSize(window, 640, 360);
+    
+    
+
+    
+    SDL_SetWindowSize(window, width, height);
     SDL_SetWindowPosition(window, 0, 1500);
     SDL_ShowWindow(window);
     

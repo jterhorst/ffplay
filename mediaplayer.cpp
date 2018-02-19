@@ -539,9 +539,11 @@ int MediaPlayer::stream_component_open(VideoState *is, int stream_index, MediaPl
 //    if (forced_codec_name != NULL && strlen(forced_codec_name) > 0)
 //        codec = avcodec_find_decoder_by_name(forced_codec_name);
     if (!codec) {
-        if (forced_codec_name) av_log(NULL, AV_LOG_WARNING,
-                                      "No codec could be found with name '%s'\n", forced_codec_name);
-        else                   av_log(NULL, AV_LOG_WARNING,
+//        if (forced_codec_name)
+//            av_log(NULL, AV_LOG_WARNING,
+//                                      "No codec could be found with name '%s'\n", forced_codec_name);
+//        else
+            av_log(NULL, AV_LOG_WARNING,
                                       "No codec could be found with id %d\n", avctx->codec_id);
         ret = AVERROR(EINVAL);
         goto fail;
