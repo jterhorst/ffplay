@@ -319,15 +319,9 @@ int main(int argc, char **argv)
     proxy.renderer_info = renderer_info;
     proxy.renderer = renderer;
     
-    //    player = new MediaPlayer();
-    //    player->set_filename((char *)input_filename, &proxy);
-    //    player->set_flush_pkt(&flush_pkt);
-    playerManager = (PlayerManager*)malloc(sizeof(PlayerManager));
-//    MediaPlayer * player = playerManager->playerForFile((char *)input_filename, &proxy);
+    playerManager = new PlayerManager();
+    MediaPlayer * player = playerManager->playerForFile((char *)input_filename, &proxy);
     
-    MediaPlayer * player = new MediaPlayer();
-    player->set_filename((char *)input_filename, &proxy);
-    player->set_flush_pkt(&flush_pkt);
     
     ScreenElement element = ScreenElement();
     element.x = 0;

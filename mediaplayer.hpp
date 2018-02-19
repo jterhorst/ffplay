@@ -19,7 +19,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <unordered_map>
+#include <map>
 
 
 
@@ -526,8 +526,8 @@ public:
     PlayerManager();
     ~PlayerManager();
     
-    std::unordered_map <const char *, MediaPlayer*> players;
-    std::unordered_map<std::string, AVPacket> flush_packets;
+    std::map <std::string, MediaPlayer *> players;
+    std::map<std::string, AVPacket> flush_packets;
     
     MediaPlayer * playerForFile(std::string filepath, MediaPlayerThreadProxy * proxy);
 };
